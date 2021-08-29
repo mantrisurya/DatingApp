@@ -30,6 +30,7 @@ namespace SkeletonDatingProject
         {
             services.AddDbContext<DataContext>(options => { options.UseSqlite(_config.GetConnectionString("DefaultConnection")); });
             services.AddControllers();
+            services.AddCors();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SkeletonDatingProject", Version = "v1" });
@@ -49,6 +50,8 @@ namespace SkeletonDatingProject
             app.UseHttpsRedirection();
 
             app.UseRouting();
+
+            app.UseCors(policy => policy.AllowAnyMethod().AllowAnyHeader().WithOrigins("http://localhost:4200"));
 
             app.UseAuthorization();
 
