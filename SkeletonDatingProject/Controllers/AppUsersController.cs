@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,9 +11,7 @@ using SkeletonDatingProject.Entities;
 
 namespace SkeletonDatingProject.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class AppUsersController : ControllerBase
+    public class AppUsersController : BaseApiController
     {
         private readonly DataContext _context;
 
@@ -22,7 +21,8 @@ namespace SkeletonDatingProject.Controllers
         }
 
         // GET: api/AppUsers
-        [HttpGet]
+        [AllowAnonymous]
+        [Authorize]
         public async Task<ActionResult<IEnumerable<AppUser>>> GetUsers()
         {
             return await _context.Users.ToListAsync();
@@ -30,6 +30,7 @@ namespace SkeletonDatingProject.Controllers
 
         // GET: api/AppUsers/5
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<AppUser>> GetAppUser(int id)
         {
             var appUser = await _context.Users.FindAsync(id);
