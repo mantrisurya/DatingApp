@@ -49,7 +49,7 @@ namespace SkeletonDatingProject.Controllers
         {
             var user = await _dataContext.Users.SingleOrDefaultAsync(user => user.UserName == loginUserDto.UserName.ToLower());
             if (user == null) return BadRequest("Invalid username");
-            using var hmac = new HMACSHA512();
+            using var hmac = new HMACSHA512(user.PasswordSalt);
             var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginUserDto.Password));
             for(int i = 0; i < computedHash.Length; i++)
             {
