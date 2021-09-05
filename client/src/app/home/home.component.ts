@@ -9,7 +9,6 @@ import { AccountService } from '../_services/account.service';
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit {
-  users: any;
   registerMode = false;
   constructor() { }
 
