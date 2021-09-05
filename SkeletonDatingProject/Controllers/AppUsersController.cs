@@ -23,6 +23,7 @@ namespace SkeletonDatingProject.Controllers
         // GET: api/AppUsers
         [AllowAnonymous]
         [Authorize]
+        [HttpGet]
         public async Task<ActionResult<IEnumerable<AppUser>>> GetUsers()
         {
             return await _context.Users.ToListAsync();
