@@ -52,9 +52,10 @@ namespace SkeletonDatingProject.Data
             _context.Users.Remove(appUser);
         }
 
-        public void Update(AppUser user)
+        public void Update(AppUser appUser, MemberUpdateDto memberUpdateDto)
         {
-            _context.Entry(user).State = EntityState.Modified;
+            _mapper.Map(memberUpdateDto, appUser);
+            _context.Entry(appUser).State = EntityState.Modified;
         }
 
         public async Task<MemberDto> GetMemberAsync(string userName)

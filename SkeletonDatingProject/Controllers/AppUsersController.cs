@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -42,16 +43,21 @@ namespace SkeletonDatingProject.Controllers
 
         // PUT: api/AppUsers/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutAppUser(int id, AppUser appUser)
+        [HttpPut]
+        public async Task<IActionResult> UpdateAppUser(MemberUpdateDto memberUpdateDto)
         {
-            if (_userRepository.IsUserAvailable(id))
+            var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = await _userRepository.GetUserByUserNameAsync(username);
+            if (user == null)
             {
                 return BadRequest();
             }
-            _userRepository.Update(appUser);
-            await _userRepository.SaveAllAsync();
+
+            _userRepository.Update(user, memberUpdateDto);
+            if(await _userRepository.SaveAllAsync())
             return NoContent();
+
+            return BadRequest("Failed to update user");
         }
 
         // DELETE: api/AppUsers/5

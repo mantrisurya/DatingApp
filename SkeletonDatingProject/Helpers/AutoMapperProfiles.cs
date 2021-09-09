@@ -17,6 +17,7 @@ namespace SkeletonDatingProject.Helpers
                 .ForMember(dest => dest.PhotoUrl, opts => opts.MapFrom(src => src.Photos.FirstOrDefault(x => x.IsMain).Url))
                 .ForMember(dest => dest.Age, opts => opts.MapFrom( src => src.DateOfBirth.CalculateAge()));
             CreateMap<Photo, PhotoDto>();
+            CreateMap<MemberUpdateDto, AppUser>();
         }
     }
 }
