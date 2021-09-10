@@ -1,4 +1,6 @@
-﻿using SkeletonDatingProject.DTO;
+﻿using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Http;
+using SkeletonDatingProject.DTO;
 using SkeletonDatingProject.Entities;
 using System;
 using System.Collections.Generic;
@@ -18,5 +20,7 @@ namespace SkeletonDatingProject.Interfaces
         Task<IEnumerable<MemberDto>> GetMembersAsync();
         void DeleteAppUserAsync(AppUser user);
         bool IsUserAvailable(int id);
+        Task<ImageUploadResult> AddPhoto(IFormFile file);
+
     }
 }

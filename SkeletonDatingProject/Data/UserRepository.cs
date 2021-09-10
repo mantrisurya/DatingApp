@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using CloudinaryDotNet.Actions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using SkeletonDatingProject.DTO;
 using SkeletonDatingProject.Entities;
@@ -15,10 +17,12 @@ namespace SkeletonDatingProject.Data
     {
         private readonly DataContext _context;
         private readonly IMapper _mapper;
-        public UserRepository(DataContext dataContext, IMapper mapper)
+        private readonly IPhotoService _photoService;
+        public UserRepository(DataContext dataContext, IMapper mapper, IPhotoService photoServic)
         {
             _context = dataContext;
             _mapper = mapper;
+            _photoService = photoServic;
         }
         public async Task<AppUser> GetUserByIdAsync(int id)
         {
@@ -71,6 +75,11 @@ namespace SkeletonDatingProject.Data
             return await _context.Users
                 .ProjectTo<MemberDto>(_mapper.ConfigurationProvider)
                 .ToListAsync();
+        }
+
+        public async Task<ImageUploadResult> AddPhoto(IFormFile file)
+        {
+            return await _photoService.AddPhotoAsync(file);
         }
     }
 }

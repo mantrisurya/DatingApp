@@ -47,7 +47,7 @@ namespace SkeletonDatingProject.Controllers
         [HttpPost("Login")]
         public async Task<ActionResult<AppUserDto>> Login(LoginUserDto loginUserDto)
         {
-            var user = await _dataContext.Users.SingleOrDefaultAsync(user => user.UserName == loginUserDto.UserName.ToLower());
+            var user = await _dataContext.Users.Include(x => x.Photos).SingleOrDefaultAsync(user => user.UserName == loginUserDto.UserName.ToLower());
             if (user == null) return BadRequest("Invalid username");
             using var hmac = new HMACSHA512(user.PasswordSalt);
             var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginUserDto.Password));
@@ -59,7 +59,8 @@ namespace SkeletonDatingProject.Controllers
             return new AppUserDto
             {
                 UserName = user.UserName,
-                Token = _tokenService.CreateToken(user)
+                Token = _tokenService.CreateToken(user),
+                PhotoUrl = user.Photos?.FirstOrDefault(x => x.IsMain)?.Url
             };
         }
 

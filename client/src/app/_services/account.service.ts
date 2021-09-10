@@ -18,15 +18,15 @@ export class AccountService {
     return this.http.post<User>(this.apiBaseUrl + 'account/login', model).pipe(
       map((user: User) => {
         if (user) {
-          const userString = JSON.stringify(user);
-          localStorage.setItem('user', userString);
-          this.currentUserSource.next(user);
+          this.setCurrentUser(user);
         }
       })
     );
   }
 
   setCurrentUser(user: User) {
+    const userString = JSON.stringify(user);
+    localStorage.setItem('user', userString);
     this.currentUserSource.next(user);
   }
 
@@ -39,9 +39,7 @@ export class AccountService {
     return this.http.post<User>(this.apiBaseUrl + 'account/register', model).pipe(
       map((user: User) => {
         if (user) {
-          const userString = JSON.stringify(user);
-          localStorage.setItem('user', userString);
-          this.currentUserSource.next(user);
+          this.setCurrentUser(user);
         }
       })
     );
