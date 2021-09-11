@@ -16,6 +16,7 @@ namespace SkeletonDatingProject.Extensions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration config)
         {
+            services.AddScoped<LogUserActivity>();
             services.Configure<CloudinarySettings>(config.GetSection("CloudinarySettings"));
             services.AddSingleton<ITokenService, TokenService>();
             services.AddScoped<IPhotoService, PhotoService>();

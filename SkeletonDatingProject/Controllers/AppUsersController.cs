@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using SkeletonDatingProject.DTO;
 using SkeletonDatingProject.Entities;
 using SkeletonDatingProject.Extensions;
+using SkeletonDatingProject.Helpers;
 using SkeletonDatingProject.Interfaces;
 
 namespace SkeletonDatingProject.Controllers
@@ -28,9 +29,20 @@ namespace SkeletonDatingProject.Controllers
 
         // GET: api/AppUsers
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<MemberDto>>> GetAppUsers()
+        public async Task<ActionResult<IEnumerable<MemberDto>>> GetAppUsers([FromQuery]UserParams userParams)
         {
-            return Ok(await _userRepository.GetMembersAsync());
+            var user = await _userRepository.GetUserByUserNameAsync(User.GetUserName());
+            userParams.CurrentUserName = user.UserName;
+            if (string.IsNullOrEmpty(userParams.Gender))
+            {
+                userParams.Gender = user.Gender == "male" ? "female" : "male";
+            }
+
+
+            var users = await _userRepository.GetMembersAsync(userParams);
+            Response.AddPaginationHeader(users.CurrentPage, users.PageSize, users.TotalCount, users.TotalPages);
+
+            return Ok(users);
         }
 
         // GET: api/AppUsers/5
