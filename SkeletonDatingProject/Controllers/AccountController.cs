@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SkeletonDatingProject.Data;
@@ -18,29 +19,30 @@ namespace SkeletonDatingProject.Controllers
     {
         private readonly DataContext _dataContext;
         private readonly ITokenService _tokenService;
-        public AccountController(DataContext dataContext, ITokenService tokenService)
+        private readonly IMapper _mapper;
+        public AccountController(DataContext dataContext, ITokenService tokenService, IMapper mapper)
         {
             _dataContext = dataContext;
             _tokenService = tokenService;
+            _mapper = mapper;
         }
 
         [HttpPost("Register")]
         public async Task<ActionResult<AppUserDto>> Register(RegisterUserDto registerUserDto)
         {
             if (await CheckUserExists(registerUserDto)) return BadRequest("User name already exists.");
+            var user = _mapper.Map<AppUser>(registerUserDto); 
             using var hmac = new HMACSHA512();
-            var user = new AppUser
-            {
-                UserName = registerUserDto.UserName.ToLower(),
-                PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerUserDto.Password)),
-                PasswordSalt = hmac.Key
-            };
+            user.PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerUserDto.Password));
+            user.PasswordSalt = hmac.Key;
+
             _dataContext.Users.Add(user);
             await _dataContext.SaveChangesAsync();
 
             return new AppUserDto {
                 UserName = user.UserName,
-                Token = _tokenService.CreateToken(user)
+                Token = _tokenService.CreateToken(user),
+                KnownAs = user.KnownAs
             };
         }
 
@@ -60,7 +62,8 @@ namespace SkeletonDatingProject.Controllers
             {
                 UserName = user.UserName,
                 Token = _tokenService.CreateToken(user),
-                PhotoUrl = user.Photos?.FirstOrDefault(x => x.IsMain)?.Url
+                PhotoUrl = user.Photos?.FirstOrDefault(x => x.IsMain)?.Url,
+                KnownAs = user.KnownAs
             };
         }
 
