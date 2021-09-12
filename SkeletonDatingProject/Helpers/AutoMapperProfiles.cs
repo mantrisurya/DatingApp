@@ -17,6 +17,14 @@ namespace SkeletonDatingProject.Helpers
             CreateMap<MemberUpdateDto, AppUser>();
             CreateMap<RegisterUserDto, AppUser>()
                 .ForMember(dest => dest.UserName, opts => opts.MapFrom(src => src.UserName.ToLower()));
+            CreateMap<Message, MessageDto>()
+                .ForMember(dest => dest.RecipientPhotoUrl, 
+                        opts => opts.MapFrom(src => 
+                                src.Recipient.Photos.FirstOrDefault(x => x.IsMain).Url));
+            CreateMap<Message, MessageDto>()
+                .ForMember(dest => dest.SenderPhotoUrl, 
+                    opts => opts.MapFrom(src => 
+                        src.Sender.Photos.FirstOrDefault(x => x.IsMain).Url));
         }
     }
 }
