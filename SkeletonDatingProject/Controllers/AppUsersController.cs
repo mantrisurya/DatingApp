@@ -46,6 +46,7 @@ namespace SkeletonDatingProject.Controllers
         }
 
         // GET: api/AppUsers/5
+        [Authorize(Roles ="Member")]
         [HttpGet("{userName}", Name = "GetUser")]
         public async Task<ActionResult<MemberDto>> GetAppUser(string userName)
         {

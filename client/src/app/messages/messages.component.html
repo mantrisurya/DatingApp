@@ -19,10 +19,10 @@
   <div class="row" *ngIf="messages?.length !== 0">
     <table class="table table-hover" style="cursor: pointer">
       <tr>
-        <th style="widows: 14%">Messages</th>
-        <th style="widows: 20%">From / To</th>
-        <th style="widows: 20%">Sent / Received</th>
-        <th style="widows: 20%">Messages</th>
+        <th style="width: 14%;">Messages</th>
+        <th style="width: 20%;">From / To</th>
+        <th style="width: 20%;">Sent / Received</th>
+        <th style="width: 20%;">Messages</th>
       </tr>
       <tr [hidden]="loading" *ngFor="let message of messages" routerLink="{{container === 'Outbox' ? '/members/' + message.recipientUserName : '/members/' + message.senderUserName}}"
           [queryParams]="{tab: 3}">
