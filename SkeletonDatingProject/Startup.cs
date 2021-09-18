@@ -6,6 +6,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using SkeletonDatingProject.Extensions;
 using SkeletonDatingProject.Middleware;
+using SkeletonDatingProject.SignalR;
 
 namespace SkeletonDatingProject
 {
@@ -25,6 +26,7 @@ namespace SkeletonDatingProject
             services.AddControllers();
             services.AddCors();
             services.AddIdentityServices(_config);
+            services.AddSignalR();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "SkeletonDatingProject", Version = "v1" });
@@ -45,7 +47,7 @@ namespace SkeletonDatingProject
 
             app.UseRouting();
 
-            app.UseCors(policy => policy.AllowAnyMethod().AllowAnyHeader().WithOrigins("http://localhost:4200"));
+            app.UseCors(policy => policy.AllowAnyMethod().AllowAnyHeader().AllowCredentials().WithOrigins("http://localhost:4200"));
 
             app.UseAuthentication();
             app.UseAuthorization();
@@ -53,6 +55,8 @@ namespace SkeletonDatingProject
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                endpoints.MapHub<PresenceHub>("hubs/presence");
+                endpoints.MapHub<PresenceHub>("hubs/message");
             });
         }
     }

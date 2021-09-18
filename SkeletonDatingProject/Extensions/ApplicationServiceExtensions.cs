@@ -5,6 +5,7 @@ using SkeletonDatingProject.Data;
 using SkeletonDatingProject.Helpers;
 using SkeletonDatingProject.Interfaces;
 using SkeletonDatingProject.Services;
+using SkeletonDatingProject.SignalR;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace SkeletonDatingProject.Extensions
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services, IConfiguration config)
         {
+            services.AddSingleton<PresenceTracker>();
             services.AddScoped<ILikesRepository, LikesRepository>();
             services.AddScoped<IMessageRepository, MessageRepository>();
             services.AddScoped<LogUserActivity>();

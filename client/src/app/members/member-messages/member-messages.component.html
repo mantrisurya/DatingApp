@@ -1,11 +1,11 @@
 <div class="card">
   <div class="card-body">
-    <div *ngIf="messages?.length === 0">
+    <div *ngIf="(messageService.messageThread$ | async)?.length === 0">
       No messages yet.... Say hi by using the message box below
     </div>
 
-    <ul *ngIf="messages?.length != 0" class="chat">
-      <li *ngFor="let message of messages">
+    <ul *ngIf="(messageService.messageThread$ | async)?.length != 0" class="chat">
+      <li *ngFor="let message of (messageService.messageThread$ | async)">
         <span class="chat-img float-right">
           <img class="rounded-circle" src="{{message.senderPhotoUrl || './assets/user.png'}}"
                alt="{{message.senderUserName}}" />
@@ -38,6 +38,7 @@
                type="text" class="form-control input-sm" placeholder="Send a private message" />
         <div class="input-group-append">
           <button [disabled]="!messageForm.valid" class="btn btn-primary" type="submit">Send</button>
+          <i *ngIf="loading" class="fa fa-spinner fa-spin"></i>
         </div>
       </div>
     </form>

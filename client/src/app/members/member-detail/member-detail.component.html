@@ -3,6 +3,9 @@
     <div class="card">
       <img class="card-img-top img-thumbnail" src="{{member.photoUrl || './assets/user.png'}}" alt="{{member.knownAs}}" />
       <div class="card-body">
+        <div class="mb-2" *ngIf="(presence.onlineUsers$ | async)?.includes(member.userName)">
+          <i class="fa fa-user text-success"></i> Online now
+        </div>
         <div>
           <strong>Locatioin:</strong>
           <p>{{member.city}}, {{member.country}}</p>
@@ -47,7 +50,7 @@
       </tab>
       <tab heading="Messages" (selectTab)="onTabActivated($event)">
         <h4>Messages</h4>
-        <app-member-messages [messages]="messages" [userName]="member.userName"></app-member-messages>
+        <app-member-messages [userName]="member.userName"></app-member-messages>
       </tab>
     </tabset>
   </div>
