@@ -19,11 +19,10 @@ namespace SkeletonDatingProject.Data
         private readonly DataContext _context;
         private readonly IMapper _mapper;
         private readonly IPhotoService _photoService;
-        public UserRepository(DataContext dataContext, IMapper mapper, IPhotoService photoServic)
+        public UserRepository(DataContext dataContext, IMapper mapper)
         {
             _context = dataContext;
             _mapper = mapper;
-            _photoService = photoServic;
         }
         public async Task<AppUser> GetUserByIdAsync(int id)
         {
@@ -41,10 +40,6 @@ namespace SkeletonDatingProject.Data
                 .SingleOrDefaultAsync(user => user.UserName == userName.ToLower());
         }
 
-        public async Task<bool> SaveAllAsync()
-        {
-            return await _context.SaveChangesAsync() > 0;
-        }
         public void DeleteAppUserAsync(AppUser appUser)
         {
             _context.Users.Remove(appUser);
@@ -85,6 +80,11 @@ namespace SkeletonDatingProject.Data
         public async Task<ImageUploadResult> AddPhoto(IFormFile file)
         {
             return await _photoService.AddPhotoAsync(file);
+        }
+
+        public async Task<string> GetUserGender(string userName)
+        {
+            return await _context.Users.Where(x => x.UserName == userName).Select(x => x.Gender).FirstOrDefaultAsync();
         }
     }
 }

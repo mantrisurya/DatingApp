@@ -12,20 +12,18 @@ namespace SkeletonDatingProject.SignalR
 {
     public class MessageHub : Hub
     {
+        private readonly IUnitOfWork _unitOfWork;
         private PresenceTracker _tracker { get; set; }
-        private IMessageRepository _messageRepository { get; set; }
         private IMapper _mapper { get; set; }
-        private IUserRepository _userRepository { get; set; }
         private IHubContext<PresenceHub> _presenceHub { get; set; }
         private PresenceTracker _presenceTracker { get; set; }
-        public MessageHub(IMessageRepository messageRepository, IMapper mapper, IUserRepository userRepository
+        public MessageHub(IUnitOfWork unitOfWork, IMapper mapper
             , IHubContext<PresenceHub> presenceHub, PresenceTracker presenceTracker)
         {
-            _userRepository = userRepository;
             _mapper = mapper;
-            _messageRepository = messageRepository;
             _presenceHub = presenceHub;
             _presenceTracker = presenceTracker;
+            _unitOfWork = unitOfWork;
         }
 
         public override async Task OnConnectedAsync()
@@ -37,15 +35,16 @@ namespace SkeletonDatingProject.SignalR
 
             var group = await AddToGroup(groupName);
             await Clients.Group(groupName).SendAsync("UpdatedGroup", group);
-            var messages = await _messageRepository.GetMessageThread(Context.User.GetUserName(), otherUser);
+            var messages = await _unitOfWork.MessageRepository.GetMessageThread(Context.User.GetUserName(), otherUser);
 
+            if (_unitOfWork.HasChanges()) await _unitOfWork.Complete();
             await Clients.Caller.SendAsync("ReceiveMessageThread", messages);
         }
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            await RemoveFromMessageGroup();
-            //await Clients.Group(group.Name).SendAsync("UpdatedGroup", group);
+            var group = await RemoveFromMessageGroup();
+            await Clients.Group(group.Name).SendAsync("UpdatedGroup", group);
             await base.OnDisconnectedAsync(exception);
         }
 
@@ -54,8 +53,8 @@ namespace SkeletonDatingProject.SignalR
             var userName = Context.User.GetUserName();
             if (userName == createMessageDto.RecipientUserName.ToLower())
                 throw new HubException("You cannot send messages to yourself");
-            var sender = await _userRepository.GetUserByUserNameAsync(userName);
-            var recipient = await _userRepository.GetUserByUserNameAsync(createMessageDto.RecipientUserName.ToLower());
+            var sender = await _unitOfWork.UserRepository.GetUserByUserNameAsync(userName);
+            var recipient = await _unitOfWork.UserRepository.GetUserByUserNameAsync(createMessageDto.RecipientUserName.ToLower());
             if (recipient == null) throw new HubException("User not found");
 
             var message = new Message
@@ -68,7 +67,7 @@ namespace SkeletonDatingProject.SignalR
             };
 
              var groupName = GetGroupName(sender.UserName, recipient.UserName);
-            var group = await _messageRepository.GetMessageGroup(groupName);
+            var group = await _unitOfWork.MessageRepository.GetMessageGroup(groupName);
             if(group.Connections.Any(x => x.UserName == recipient.UserName))
             {
                 message.DateRead = DateTime.UtcNow;
@@ -82,8 +81,8 @@ namespace SkeletonDatingProject.SignalR
                         new { userName = sender.UserName, knownAs = sender.KnownAs});
                 }
             }
-            _messageRepository.AddMessage(message);
-            if (await _messageRepository.SaveAllAsync())
+            _unitOfWork.MessageRepository.AddMessage(message);
+            if (await _unitOfWork.Complete())
             {
                 await Clients.Group(groupName).SendAsync("NewMessage", _mapper.Map<MessageDto>(message));
             }
@@ -91,23 +90,27 @@ namespace SkeletonDatingProject.SignalR
 
         private async Task<bool> AddToGroup(string groupName)
         {
-            var group = await _messageRepository.GetMessageGroup(groupName);
+            var group = await _unitOfWork.MessageRepository.GetMessageGroup(groupName);
             var connection = new Connection(Context.ConnectionId, Context.User.GetUserName());
             if (group == null)
             {
                 group = new Group(groupName);
-                _messageRepository.AddGroup(group);
+                _unitOfWork.MessageRepository.AddGroup(group);
             }
             group.Connections.Add(connection);
 
-            return await _messageRepository.SaveAllAsync();
+            return await _unitOfWork.Complete();
         }
 
-        private async Task RemoveFromMessageGroup()
+        private async Task<Group> RemoveFromMessageGroup()
         {
-            var connection = await _messageRepository.GetConnection(Context.ConnectionId);
-            _messageRepository.RemoveConnection(connection);
-            await _messageRepository.SaveAllAsync();
+            var group = await _unitOfWork.MessageRepository.GetGroupForConnection(Context.ConnectionId);
+            var connection = group.Connections.FirstOrDefault(x => x.ConnectionId == Context.ConnectionId);
+            
+            _unitOfWork.MessageRepository.RemoveConnection(connection);
+            if (await _unitOfWork.Complete()) return group;
+
+            throw new HubException("Failed to remove from group");
         }
 
         private static string GetGroupName(string caller, string other)

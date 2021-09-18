@@ -13,7 +13,6 @@ namespace SkeletonDatingProject.Interfaces
     public interface IUserRepository
     {
         void Update(AppUser appUser, MemberUpdateDto memberUpdateDto);
-        Task<bool> SaveAllAsync();
         Task<AppUser> GetUserByIdAsync(int id);
         Task<AppUser> GetUserByUserNameAsync(string userName);
         Task<MemberDto> GetMemberAsync(string userName);
@@ -21,6 +20,7 @@ namespace SkeletonDatingProject.Interfaces
         void DeleteAppUserAsync(AppUser user);
         bool IsUserAvailable(int id);
         Task<ImageUploadResult> AddPhoto(IFormFile file);
+        Task<string> GetUserGender(string userName);
 
     }
 }

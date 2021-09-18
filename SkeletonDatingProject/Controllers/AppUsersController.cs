@@ -16,14 +16,13 @@ namespace SkeletonDatingProject.Controllers
     [Authorize]
     public class AppUsersController : BaseApiController
     {
-        private readonly IUserRepository _userRepository;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private IPhotoService _photoService;
-
-        public AppUsersController(IUserRepository repository, IMapper mapper, IPhotoService photoService)
+        private readonly IPhotoService _photoService;
+        public AppUsersController(IUnitOfWork unitOfWork, IMapper mapper, IPhotoService photoService)
         {
-            _userRepository = repository;
             _mapper = mapper;
+            _unitOfWork = unitOfWork;
             _photoService = photoService;
         }
 
@@ -31,15 +30,15 @@ namespace SkeletonDatingProject.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<MemberDto>>> GetAppUsers([FromQuery]UserParams userParams)
         {
-            var user = await _userRepository.GetUserByUserNameAsync(User.GetUserName());
-            userParams.CurrentUserName = user.UserName;
+            var gender = await _unitOfWork.UserRepository.GetUserGender(User.GetUserName());
+            userParams.CurrentUserName = User.GetUserName();
             if (string.IsNullOrEmpty(userParams.Gender))
             {
-                userParams.Gender = user.Gender == "male" ? "female" : "male";
+                userParams.Gender = gender == "male" ? "female" : "male";
             }
 
 
-            var users = await _userRepository.GetMembersAsync(userParams);
+            var users = await _unitOfWork.UserRepository.GetMembersAsync(userParams);
             Response.AddPaginationHeader(users.CurrentPage, users.PageSize, users.TotalCount, users.TotalPages);
 
             return Ok(users);
@@ -50,7 +49,7 @@ namespace SkeletonDatingProject.Controllers
         [HttpGet("{userName}", Name = "GetUser")]
         public async Task<ActionResult<MemberDto>> GetAppUser(string userName)
         {
-            return await _userRepository.GetMemberAsync(userName);
+            return await _unitOfWork.UserRepository.GetMemberAsync(userName);
         }
 
         // PUT: api/AppUsers/5
@@ -58,14 +57,14 @@ namespace SkeletonDatingProject.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateAppUser(MemberUpdateDto memberUpdateDto)
         {
-            var user = await _userRepository.GetUserByUserNameAsync(User.GetUserName());
+            var user = await _unitOfWork.UserRepository.GetUserByUserNameAsync(User.GetUserName());
             if (user == null)
             {
                 return BadRequest();
             }
 
-            _userRepository.Update(user, memberUpdateDto);
-            if(await _userRepository.SaveAllAsync())
+            _unitOfWork.UserRepository.Update(user, memberUpdateDto);
+            if(await _unitOfWork.Complete())
             return NoContent();
 
             return BadRequest("Failed to update user");
@@ -75,13 +74,13 @@ namespace SkeletonDatingProject.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteAppUser(int id)
         {
-            if (_userRepository.IsUserAvailable(id))
+            if (_unitOfWork.UserRepository.IsUserAvailable(id))
             {
                 return NotFound();
             }
-            var user = await _userRepository.GetUserByIdAsync(id);
-            _userRepository.DeleteAppUserAsync(user);
-            await _userRepository.SaveAllAsync();
+            var user = await _unitOfWork.UserRepository.GetUserByIdAsync(id);
+            _unitOfWork.UserRepository.DeleteAppUserAsync(user);
+            await _unitOfWork.Complete();
 
             return NoContent();
         }
@@ -89,8 +88,8 @@ namespace SkeletonDatingProject.Controllers
         [HttpPost("add-photo")]
         public async Task<ActionResult<PhotoDto>> AddPhoto(IFormFile file)
         {
-            var user = await _userRepository.GetUserByUserNameAsync(User.GetUserName());
-            var photoResult = await _userRepository.AddPhoto(file);
+            var user = await _unitOfWork.UserRepository.GetUserByUserNameAsync(User.GetUserName());
+            var photoResult = await _unitOfWork.UserRepository.AddPhoto(file);
             if (photoResult.Error != null) return BadRequest(photoResult.Error.Message);
 
             var photo = new Photo
@@ -105,9 +104,9 @@ namespace SkeletonDatingProject.Controllers
             }
 
             user.Photos.Add(photo);
-            if(await _userRepository.SaveAllAsync())
+            if(await _unitOfWork.Complete())
             {
-                return CreatedAtRoute("GetUser", new { userName = user.UserName } ,_mapper.Map<PhotoDto>(photo));
+                return CreatedAtRoute("GetUser", new { userName = user.UserName } , _mapper.Map<PhotoDto>(photo));
             }
 
             return BadRequest("Problem adding photo");
@@ -116,14 +115,14 @@ namespace SkeletonDatingProject.Controllers
         [HttpPut("set-main-photo/{photoId}")]
         public async Task<ActionResult> SetMainPhoto(int photoId)
         {
-            var user = await _userRepository.GetUserByUserNameAsync(User.GetUserName());
+            var user = await _unitOfWork.UserRepository.GetUserByUserNameAsync(User.GetUserName());
             var photo = user.Photos.FirstOrDefault(x => x.Id == photoId);
             if (photo.IsMain) return BadRequest("This is already your main photo");
             var currentMain = user.Photos.FirstOrDefault(x => x.IsMain);
             if (currentMain != null) currentMain.IsMain = false;
             photo.IsMain = true;
 
-            if (await _userRepository.SaveAllAsync()) return NoContent();
+            if (await _unitOfWork.Complete()) return NoContent();
 
             return BadRequest("Failed to set main photo");
         }
@@ -131,7 +130,7 @@ namespace SkeletonDatingProject.Controllers
         [HttpDelete("delete-photo/{photoId}")]
         public async Task<ActionResult> deletePhoto(int photoId)
         {
-            var user = await _userRepository.GetUserByUserNameAsync(User.GetUserName());
+            var user = await _unitOfWork.UserRepository.GetUserByUserNameAsync(User.GetUserName());
             var photo = user.Photos.FirstOrDefault(x => x.Id == photoId);
             if (photo == null) return NotFound();
             if (photo.IsMain) return BadRequest("You cannot delete your main photo");
@@ -142,7 +141,7 @@ namespace SkeletonDatingProject.Controllers
             }
             user.Photos.Remove(photo);
 
-            if (await _userRepository.SaveAllAsync()) return Ok();
+            if (await _unitOfWork.Complete()) return Ok();
             return BadRequest("Failed to delete the photo");
         }
 
